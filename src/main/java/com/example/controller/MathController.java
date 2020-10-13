@@ -25,23 +25,24 @@ public class MathController {
 	@PostMapping("/")
 	public ResponseEntity<?> resultByPost(
 			@RequestBody ObjectNode body) {
-		
-		try {
-			
-			Integer precision = null;
-			
-			if (body.hasNonNull("precision") && body.get("precision").isInt())
-				precision = body.get("precision").asInt();
 
-			return mathService.getResult(body.get("expression").asText(), precision);
-			
-		} catch (Exception e) {
-			// TODO: handle exception
-			return new ResponseEntity<>("Something went swrong " + e.getMessage(), HttpStatus.BAD_REQUEST);
+		Integer precision = null;
+		String expression = null;
+
+		if (body.hasNonNull("precision") && body.get("precision").isInt())
+			precision = body.get("precision").asInt();
+
+		if (body.hasNonNull("expression") && body.get("expression").isTextual()) {
+
+			expression = body.get("expression").asText();
+
+			String result = mathService.getResult(expression, precision);
+			return this.validateResult(result);
+
+		} else {
+			return new ResponseEntity<>("expression is requerid", HttpStatus.BAD_REQUEST);
 		}
 
-		
-		
 	}
 
 	@GetMapping("/")
@@ -49,21 +50,33 @@ public class MathController {
 			@RequestParam(required = true) String expression,
 			@RequestParam(required = false) Integer precision) {
 
-		return mathService.getResult(this.filter(expression), precision);
+		String result = mathService.getResult(filter(expression), precision);
+
+		return this.validateResult(result);
 
 	}
 
-	// Add symbol + to the math expression 
+	// validate result
+	private ResponseEntity<?> validateResult(String result) {
+
+		if (result.indexOf("Something went swrong") == -1) {
+			return new ResponseEntity<>(result, HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+		}
+
+	}
+
+	// Add symbol + to the math expression
 	// Only use if URL is not encoded
-	
 	private String filter(String expression) {
-		
+
 		StringBuilder newExpression = new StringBuilder();
 		newExpression.append(expression);
-		
+
 		for (int i = 0; i < newExpression.length(); i++) {
-			
-			if (newExpression.charAt(i) >= 48 && newExpression.charAt(i) <= 57 || newExpression.charAt(i) == 40 ) {
+
+			if (newExpression.charAt(i) >= 48 && newExpression.charAt(i) <= 57 || newExpression.charAt(i) == 40) {
 				if (i > 0 && newExpression.charAt(i - 1) == 32) {
 					newExpression.setCharAt(i - 1, '+');
 				}

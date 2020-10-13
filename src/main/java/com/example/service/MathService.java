@@ -3,36 +3,37 @@ package com.example.service;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MathService {
 
+	private ScriptEngineManager scriptEngineManager;
+	private ScriptEngine scriptEngine;
+
+	public MathService() {
+		scriptEngineManager = new ScriptEngineManager();
+		scriptEngine = scriptEngineManager.getEngineByName("Nashorn");
+	}
+
 	// Resolve math expression
-	public ResponseEntity<?> getResult(String expression, Integer precision) {
+	public String getResult(String expression, Integer precision) {
 
 		try {
 
-			ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-			ScriptEngine scriptEngine = scriptEngineManager.getEngineByName("Nashorn");
-
 			Object expResult = scriptEngine.eval(this.validate(expression));
-			
-			//Validate range precision and not null
-			if(precision != null && precision >= 0 && precision <= 30) {
-				
-			String result = String.format("%." + precision + "f", Double.parseDouble(expResult.toString()));
-			
-			return new ResponseEntity<>(result, HttpStatus.OK);
+
+			// Validate range precision and not null
+			if (precision != null && precision >= 0 && precision <= 30) {
+				expResult = String.format("%." + precision + "f", Double.parseDouble(expResult.toString()));
 			}
-			
-			return new ResponseEntity<>(expResult, HttpStatus.OK);
+
+			return expResult.toString();
 
 		} catch (Exception e) {
 			// TODO: handle exception
-			return new ResponseEntity<>("Something went swrong " + e.getMessage(), HttpStatus.BAD_REQUEST);
+			return "Something went swrong " + e.getMessage();
+
 		}
 
 	}
